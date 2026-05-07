@@ -1,0 +1,17 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  button:not(:disabled) {
+    cursor: pointer;
+    transition: transform 0.12s ease, opacity 0.12s ease;
+  }
+  button:not(:disabled):hover {
+    opacity: 0.9;
+  }
+  button:not(:disabled):active {
+    transform: scale(0.95);
+    opacity: 0.75;
+    transition-duration: 0.05s;
+  }
+}
