@@ -49,7 +49,7 @@ export default function HomePage() {
         })
         .catch(() => {})
 
-    const ch = echo.channel('instances')
+    const ch = echo.private('instances')
     ch.subscribed(() => console.log('[ws] subscribed instances'))
     ch.error((err: unknown) => console.error('[ws] channel error', err))
     ch.listen('.SessionCreated', (e: { session_id: number; instance_id: number }) => {

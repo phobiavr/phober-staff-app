@@ -31,7 +31,7 @@ export default function SessionsPage() {
   }, [])
 
   useEffect(() => {
-    const ch = echo.channel('instances')
+    const ch = echo.private('instances')
     ch.listen('.SessionCreated', (e: { session_id: number; instance_id: number }) => {
       getTodaySessions().then(res => setSessions(res.data)).catch(() => {})
     })
