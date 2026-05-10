@@ -5,7 +5,7 @@ import { Employee, getEmployees } from '../api/staff'
 import DeviceCard from '../components/DeviceCard'
 import EmployeePanel from '../components/EmployeePanel'
 import StartSessionModal from '../components/StartSessionModal'
-import { echoSessions, echoSchedule } from '../realtime/echo'
+import { echo } from '../realtime/echo'
 
 export default function HomePage() {
   const [instances, setInstances] = useState<Instance[]>([])
@@ -49,25 +49,20 @@ export default function HomePage() {
         })
         .catch(() => {})
 
-    const sessionsCh = echoSessions.channel('instances')
-    sessionsCh.subscribed(() => console.log('[ws] subscribed sessions/instances'))
-    sessionsCh.error((err: unknown) => console.error('[ws] sessions channel error', err))
-    sessionsCh.listen('.SessionCreated', (e: { session_id: number; instance_id: number }) => {
+    const ch = echo.channel('instances')
+    ch.subscribed(() => console.log('[ws] subscribed instances'))
+    ch.error((err: unknown) => console.error('[ws] channel error', err))
+    ch.listen('.SessionCreated', (e: { session_id: number; instance_id: number }) => {
       console.log('[ws] SessionCreated', e)
       refresh()
     })
-
-    const scheduleCh = echoSchedule.channel('instances')
-    scheduleCh.subscribed(() => console.log('[ws] subscribed schedule/instances'))
-    scheduleCh.error((err: unknown) => console.error('[ws] schedule channel error', err))
-    scheduleCh.listen('.ScheduleUpdated', (e: { schedule_id: number; instance_id: number; action: string }) => {
+    ch.listen('.ScheduleUpdated', (e: { schedule_id: number; instance_id: number; action: string }) => {
       console.log('[ws] ScheduleUpdated', e)
       refresh()
     })
 
     return () => {
-      echoSessions.leave('instances')
-      echoSchedule.leave('instances')
+      echo.leave('instances')
     }
   }, [])
 

@@ -14,11 +14,11 @@ type AuthCallback = (
   data: { auth: string; channel_data?: string } | null,
 ) => void
 
-function makeAuthorizer(authEndpoint: string) {
-  return (channel: { name: string }, _opts: ChannelOptions) => ({
+function authorizer(channel: { name: string }, _opts: ChannelOptions) {
+  return {
     authorize: (socketId: string, callback: AuthCallback) => {
       const token = localStorage.getItem('token') ?? ''
-      fetch(authEndpoint, {
+      fetch(`${API_BASE_URL}/auth/broadcasting/auth`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -34,43 +34,22 @@ function makeAuthorizer(authEndpoint: string) {
         .then((data) => callback(null, data))
         .catch((err) => callback(err, null))
     },
-  })
-}
-
-function makeEcho(opts: {
-  key: string
-  wsPath: string
-  authEndpoint: string
-}) {
-  return new Echo({
-    broadcaster: 'reverb',
-    key: opts.key,
-    wsHost: apiUrl.hostname,
-    wsPort: port,
-    wssPort: port,
-    forceTLS,
-    enabledTransports: ['ws', 'wss'],
-    wsPath: opts.wsPath,
-    authorizer: makeAuthorizer(opts.authEndpoint),
-  })
+  }
 }
 
 // @ts-ignore
-const SESSIONS_KEY = import.meta.env.VITE_REVERB_SESSIONS_KEY ?? 'sessions-key'
-// @ts-ignore
-const SCHEDULE_KEY = import.meta.env.VITE_REVERB_SCHEDULE_KEY ?? 'schedule-key'
+const KEY: string = import.meta.env.VITE_REVERB_KEY ?? 'phober-key'
 
-export const echoSessions = makeEcho({
-  key: SESSIONS_KEY,
-  wsPath: '/ws/sessions',
-  authEndpoint: `${API_BASE_URL}/staff/broadcasting/auth`,
+export const echo = new Echo({
+  broadcaster: 'reverb',
+  key: KEY,
+  wsHost: apiUrl.hostname,
+  wsPort: port,
+  wssPort: port,
+  forceTLS,
+  enabledTransports: ['ws', 'wss'],
+  wsPath: '/ws',
+  authorizer,
 })
 
-export const echoSchedule = makeEcho({
-  key: SCHEDULE_KEY,
-  wsPath: '/ws/schedule',
-  authEndpoint: `${API_BASE_URL}/hardware/broadcasting/auth`,
-})
-
-;(window as any).echoSessions = echoSessions
-;(window as any).echoSchedule = echoSchedule
+;(window as any).echo = echo

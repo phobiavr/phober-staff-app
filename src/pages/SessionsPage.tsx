@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Session, getTodaySessions } from '../api/sessions'
 import { Instance, getInstances } from '../api/hardware'
-import { echoSessions } from '../realtime/echo'
+import { echo } from '../realtime/echo'
 
 const STATUS_STYLE: Record<string, { label: string; cls: string }> = {
   ACTIVE:   { label: 'Активен',   cls: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
@@ -31,23 +31,11 @@ export default function SessionsPage() {
   }, [])
 
   useEffect(() => {
-    console.log('[ws] subscribing to instances channel, state=', echoSessions.connector.pusher.connection.state)
-    const channel = echoSessions.channel('instances')
-
-    channel.subscribed(() => console.log('[ws] subscribed to instances'))
-    channel.error((err: unknown) => console.error('[ws] channel error', err))
-
-    channel.listen('.SessionCreated', (e: { session_id: number; instance_id: number }) => {
-      console.log('[ws] SessionCreated', e)
-      getTodaySessions()
-        .then(res => setSessions(res.data))
-        .catch(() => {})
+    const ch = echo.channel('instances')
+    ch.listen('.SessionCreated', (e: { session_id: number; instance_id: number }) => {
+      getTodaySessions().then(res => setSessions(res.data)).catch(() => {})
     })
-
-    return () => {
-      console.log('[ws] leaving instances channel')
-      echoSessions.leave('instances')
-    }
+    return () => { echo.leave('instances') }
   }, [])
 
   const total    = sessions.length

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Instance, getInstances, getDevices, buildLogoMap } from '../api/hardware'
 import { fetchTvSessions, getTvParams, storeTvParams } from '../api/tvClient'
 import { Session } from '../api/sessions'
-import { echoSessions, echoSchedule } from '../realtime/echo'
+import { echo } from '../realtime/echo'
 
 const DEVICE_ICONS: Record<string, string> = {
   PS_VR: '🥽', HTC: '🎮', OCULUS: '🥽', OMNI: '🏃', DOF_3: '💺', PC: '🖥️',
@@ -196,15 +196,12 @@ export default function TVPage() {
   }, [load])
 
   useEffect(() => {
-    const sessionsCh = echoSessions.channel('instances')
-    sessionsCh.listen('.SessionCreated', () => load())
-
-    const scheduleCh = echoSchedule.channel('instances')
-    scheduleCh.listen('.ScheduleUpdated', () => load())
+    const ch = echo.channel('instances')
+    ch.listen('.SessionCreated', () => load())
+    ch.listen('.ScheduleUpdated', () => load())
 
     return () => {
-      echoSessions.leave('instances')
-      echoSchedule.leave('instances')
+      echo.leave('instances')
     }
   }, [load])
 
