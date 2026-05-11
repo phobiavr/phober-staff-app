@@ -21,14 +21,35 @@ export default function Layout() {
 
   const handleLogout = () => { logout(); navigate('/login') }
 
+  const copyToClipboard = async (text: string) => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text)
+        return
+      }
+    } catch (e) {
+      console.warn('clipboard api failed, falling back', e)
+    }
+    const ta = document.createElement('textarea')
+    ta.value = text
+    ta.style.position = 'fixed'
+    ta.style.opacity = '0'
+    document.body.appendChild(ta)
+    ta.select()
+    document.execCommand('copy')
+    document.body.removeChild(ta)
+  }
+
   const handleTvLink = async () => {
     try {
       const { params } = await generateTvToken()
       const tvLink = `${window.location.origin}/tv${params}`
-      await navigator.clipboard.writeText(tvLink)
+      await copyToClipboard(tvLink)
       setTvCopied(true)
       setTimeout(() => setTvCopied(false), 2500)
-    } catch {}
+    } catch (e) {
+      console.error('tv link generation failed', e)
+    }
   }
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
