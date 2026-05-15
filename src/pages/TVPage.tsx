@@ -33,14 +33,13 @@ function SessionCard({ inst, session, fetchedAt, logo, onExpire }: {
   onExpire: (id: number) => void
 }) {
   const { countdown } = inst.schedule
-  const endsAt = session
-    ? new Date(session.created_at).getTime() + session.time * 60 * 1000
+  const sessionStart = session ? new Date(session.started_at ?? session.created_at).getTime() : null
+  const endsAt = sessionStart
+    ? sessionStart + session!.time * 60 * 1000
     : countdown > 0 ? fetchedAt + countdown * 1000 : null
 
   const totalSecs = session ? session.time * 60 : countdown > 0 ? countdown : 1
-  const startedAt = session
-    ? new Date(session.created_at).getTime()
-    : endsAt ? endsAt - countdown * 1000 : Date.now()
+  const startedAt = sessionStart ?? (endsAt ? endsAt - countdown * 1000 : Date.now())
 
   const [remaining, setRemaining] = useState(() =>
     endsAt ? Math.max(0, Math.floor((endsAt - Date.now()) / 1000)) : 0
@@ -209,16 +208,17 @@ export default function TVPage() {
     setSessions(prev => { const n = { ...prev }; delete n[instanceId]; return n })
   }, [])
 
-  // только свободные и в сеансе
+  // только свободные и активные сеансы (QUEUE на TV не показываем)
   const visible = instances.filter(inst => {
     const { type } = inst.schedule
     const isFree    = type === 'N/A' && inst.active
-    const isSession = type === 'IN_SESSION' || !!sessions[inst.id]
+    const session   = sessions[inst.id]
+    const isSession = type === 'IN_SESSION' || (!!session && session.status === 'ACTIVE')
     return isFree || isSession
   })
 
   const freeCount    = visible.filter(i => i.schedule.type === 'N/A').length
-  const sessionCount = visible.filter(i => i.schedule.type === 'IN_SESSION' || sessions[i.id]).length
+  const sessionCount = visible.filter(i => i.schedule.type === 'IN_SESSION' || sessions[i.id]?.status === 'ACTIVE').length
 
   const pad = (n: number) => String(n).padStart(2, '0')
   const clockStr = `${pad(clock.getHours())}:${pad(clock.getMinutes())}:${pad(clock.getSeconds())}`

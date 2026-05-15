@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Instance, getInstances, getDevices, buildLogoMap } from '../api/hardware'
-import { Session, CreateSessionParams, createSession, finishSession, getSessions } from '../api/sessions'
+import { Session, CreateSessionParams, createSession, startSession, cancelSession, finishSession, getSessions } from '../api/sessions'
 import { Employee, getEmployees } from '../api/staff'
 import DeviceCard from '../components/DeviceCard'
 import EmployeePanel from '../components/EmployeePanel'
@@ -89,6 +89,29 @@ export default function HomePage() {
       refreshInstances()
       refreshEmployees()
     } catch {}
+  }
+
+  const handleStartSession = async (session: Session) => {
+    try {
+      const { data: updated } = await startSession(session.id)
+      setSessions(prev => ({ ...prev, [session.instance_id]: updated }))
+      setFetchedAt(Date.now())
+      refreshInstances()
+    } catch {}
+  }
+
+  const handleCancelSession = async (session: Session) => {
+    setSessions(prev => {
+      const next = { ...prev }
+      delete next[session.instance_id]
+      return next
+    })
+    try {
+      await cancelSession(session.id)
+    } finally {
+      refreshInstances()
+      refreshEmployees()
+    }
   }
 
   const handleFinish = async (session: Session) => {
@@ -183,6 +206,8 @@ export default function HomePage() {
                 fetchedAt={fetchedAt}
                 logo={logoMap[instance.device]}
                 onStart={setSelectedInstance}
+                onStartSession={handleStartSession}
+                onCancelSession={handleCancelSession}
                 onFinish={handleFinish}
                 onExpire={handleExpire}
               />

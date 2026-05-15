@@ -8,6 +8,7 @@ export interface Session {
   time: number       // minutes: 15, 30, 60
   status: string
   created_at: string
+  started_at: string | null
   serviced_by_name: string | null
   customer: string | null
 }
@@ -28,7 +29,13 @@ export const getTodaySessions = () =>
   client.get<Session[]>('/staff/sessions/today')
 
 export const createSession = (params: CreateSessionParams) =>
-  client.post<Session>('/staff/sessions', { ...params, schedule: true })
+  client.post<Session>('/staff/sessions', params)
+
+export const startSession = (id: number) =>
+  client.put<Session>(`/staff/sessions/${id}/start`, {})
+
+export const cancelSession = (id: number) =>
+  client.delete<void>(`/staff/sessions/${id}`)
 
 export const finishSession = (id: number) =>
   client.put<void>(`/staff/sessions/${id}/finish`, {})

@@ -23,6 +23,7 @@ interface StatusStyle {
 
 const STATUS_STYLES: Record<string, StatusStyle> = {
   IN_SESSION:  { label: 'В сеансе',     strip: 'bg-orange-100 dark:bg-orange-900/40',  text: 'text-orange-600 dark:text-orange-400'  },
+  QUEUE:       { label: 'Ожидание',     strip: 'bg-yellow-100 dark:bg-yellow-900/40',  text: 'text-yellow-600 dark:text-yellow-400'  },
   MAINTENANCE: { label: 'Обслуживание', strip: 'bg-gray-100 dark:bg-gray-800',          text: 'text-gray-500 dark:text-gray-400'       },
   RESERVATION: { label: 'Бронь',        strip: 'bg-blue-100 dark:bg-blue-900/40',       text: 'text-blue-600 dark:text-blue-400'       },
   INSPECTION:  { label: 'Осмотр',       strip: 'bg-yellow-100 dark:bg-yellow-900/40',   text: 'text-yellow-600 dark:text-yellow-400'   },
@@ -37,22 +38,26 @@ interface Props {
   fetchedAt: number
   logo?: string
   onStart: (instance: Instance) => void
+  onStartSession: (session: Session) => void
+  onCancelSession: (session: Session) => void
   onFinish: (session: Session) => void
   onExpire: (instanceId: number) => void
 }
 
-export default function DeviceCard({ instance, session, fetchedAt, logo, onStart, onFinish, onExpire }: Props) {
+export default function DeviceCard({ instance, session, fetchedAt, logo, onStart, onStartSession, onCancelSession, onFinish, onExpire }: Props) {
   const { type, countdown } = instance.schedule
   const isDisabled = !instance.active
-  const isSession = session !== null || type === 'IN_SESSION'
-  const isFree = !session && type === 'N/A' && !isDisabled
+  const isQueued = session?.status === 'QUEUE'
+  const isActive = (!isQueued && session !== null) || type === 'IN_SESSION'
+  const isSession = isQueued || isActive
+  const isFree = !isSession && type === 'N/A' && !isDisabled
 
-  const currentType = isSession ? 'IN_SESSION' : type
+  const currentType = isQueued ? 'QUEUE' : isActive ? 'IN_SESSION' : type
   const style = STATUS_STYLES[currentType] ?? STATUS_STYLES['N/A']
 
-  const endsAt = session
-    ? new Date(session.created_at).getTime() + session.time * 60 * 1000
-    : countdown > 0 ? fetchedAt + countdown * 1000 : null
+  const endsAt = isActive && session
+    ? new Date(session.started_at ?? session.created_at).getTime() + session.time * 60 * 1000
+    : !isQueued && countdown > 0 ? fetchedAt + countdown * 1000 : null
 
   const handleExpire = useCallback(() => onExpire(instance.id), [instance.id, onExpire])
 
@@ -102,7 +107,22 @@ export default function DeviceCard({ instance, session, fetchedAt, logo, onStart
         </div>
 
         {/* Кнопка всегда внизу */}
-        {isSession && session ? (
+        {isQueued && session ? (
+          <div className="flex gap-1.5 shrink-0">
+            <button
+              onClick={() => onCancelSession(session)}
+              className="flex-1 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            >
+              Отмена
+            </button>
+            <button
+              onClick={() => onStartSession(session)}
+              className="flex-1 py-1.5 rounded-xl bg-green-600 text-white text-xs font-semibold hover:bg-green-700 transition-colors"
+            >
+              Старт
+            </button>
+          </div>
+        ) : isActive && session ? (
           <button
             onClick={() => onFinish(session)}
             className="w-full py-1.5 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-semibold hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors shrink-0"
