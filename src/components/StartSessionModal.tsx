@@ -27,7 +27,7 @@ interface Props {
 const selectCls = 'w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm outline-none focus:border-blue-400 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 transition-all'
 
 export default function StartSessionModal({ instance, onConfirm, onClose }: Props) {
-  const [time, setTime] = useState<SessionTime>('MIN_30')
+  const [time, setTime] = useState<SessionTime>('MIN_15')
 
   const [employees, setEmployees] = useState<Employee[]>([])
   const [employeeLoading, setEmployeeLoading] = useState(true)
