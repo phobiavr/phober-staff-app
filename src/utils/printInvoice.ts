@@ -72,7 +72,7 @@ export function printInvoice(invoice: Invoice) {
 </head>
 <body>
   <div class="header">
-    <h1>🎮 Phober VR</h1>
+    <h1>🎮 Phobia VR</h1>
     <p>Счёт № ${invoice.id}</p>
   </div>
 
@@ -127,7 +127,7 @@ export function printInvoice(invoice: Invoice) {
     <span class="amount">${invoice.total} AZN</span>
   </div>
 
-  <div class="footer">Спасибо за посещение Phober VR!</div>
+  <div class="footer">Спасибо за посещение Phobia VR!</div>
 
   <script>window.onload = () => { window.print(); }<\/script>
 </body>
