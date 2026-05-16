@@ -49,18 +49,18 @@ export default function HomePage() {
         })
         .catch(() => {})
 
-    const sessions = echo.private('sessions')
-    sessions.subscribed(() => console.log('[ws] subscribed sessions'))
-    sessions.error((err: unknown) => console.error('[ws] channel error', err))
-    sessions.listen('.SessionCreated', (e: { session_id: number; instance_id: number }) => {
+    const sessionsCh = echo.private('sessions')
+    sessionsCh.subscribed(() => console.log('[ws] subscribed sessions'))
+    sessionsCh.error((err: unknown) => console.error('[ws] channel error', err))
+    sessionsCh.listen('.SessionCreated', (e: { session_id: number; instance_id: number }) => {
       console.log('[ws] SessionCreated', e)
       refresh()
     })
 
-    const instances = echo.private('instances')
-    instances.subscribed(() => console.log('[ws] subscribed instances'))
-    instances.error((err: unknown) => console.error('[ws] channel error', err))
-    instances.listen('.ScheduleUpdated', (e: { schedule_id: number; instance_id: number; action: string }) => {
+    const instancesCh = echo.private('instances')
+    instancesCh.subscribed(() => console.log('[ws] subscribed instances'))
+    instancesCh.error((err: unknown) => console.error('[ws] channel error', err))
+    instancesCh.listen('.ScheduleUpdated', (e: { schedule_id: number; instance_id: number; action: string }) => {
       console.log('[ws] ScheduleUpdated', e)
       refresh()
     })
