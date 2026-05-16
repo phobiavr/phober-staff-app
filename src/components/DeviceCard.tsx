@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Instance } from '../api/hardware'
 import { Session } from '../api/sessions'
 import SessionTimer from './SessionTimer'
@@ -13,6 +13,22 @@ const DEVICE_ICONS: Record<string, string> = {
 function DeviceIcon({ logo, type, className }: { logo?: string; type: string; className?: string }) {
   if (logo) return <img src={logo} alt={type} className={className ?? 'w-5 h-5 object-contain'} />
   return <span className="text-lg leading-none">{DEVICE_ICONS[type] ?? '🎮'}</span>
+}
+
+function WaitTimer({ since }: { since: string }) {
+  const [elapsed, setElapsed] = useState(() => Math.floor((Date.now() - new Date(since).getTime()) / 1000))
+  useEffect(() => {
+    const id = setInterval(() => setElapsed(Math.floor((Date.now() - new Date(since).getTime()) / 1000)), 1000)
+    return () => clearInterval(id)
+  }, [since])
+  const m = Math.floor(elapsed / 60)
+  const s = elapsed % 60
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return (
+    <span className="font-mono font-bold text-lg tabular-nums text-yellow-500">
+      {pad(m)}:{pad(s)}
+    </span>
+  )
 }
 
 interface StatusStyle {
@@ -87,7 +103,12 @@ export default function DeviceCard({ instance, session, fetchedAt, logo, onStart
 
         {/* Центр: таймер или пустота */}
         <div className="flex-1 flex flex-col items-center justify-center">
-          {isSession && endsAt !== null && (
+          {isQueued && session && (
+            <div className="flex flex-col items-center gap-0.5">
+              <WaitTimer since={session.created_at} />
+            </div>
+          )}
+          {!isQueued && isSession && endsAt !== null && (
             <SessionTimer endsAt={endsAt} onExpire={handleExpire} />
           )}
           {isSession && session && (session.customer || session.serviced_by_name) && (

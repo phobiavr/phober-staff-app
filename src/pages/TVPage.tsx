@@ -120,6 +120,55 @@ function SessionCard({ inst, session, fetchedAt, logo, onExpire }: {
   )
 }
 
+// ---------- QueueCard ----------
+function QueueCard({ inst, session, logo }: { inst: Instance; session: Session; logo?: string }) {
+  const waitingSince = new Date(session.created_at).getTime()
+  const [elapsed, setElapsed] = useState(() => Math.floor((Date.now() - waitingSince) / 1000))
+
+  useEffect(() => {
+    const id = setInterval(() => setElapsed(Math.floor((Date.now() - waitingSince) / 1000)), 1000)
+    return () => clearInterval(id)
+  }, [waitingSince])
+
+  const h = Math.floor(elapsed / 3600)
+  const m = Math.floor((elapsed % 3600) / 60)
+  const s = elapsed % 60
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const waitStr = h > 0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`
+
+  return (
+    <div className="relative rounded-2xl overflow-hidden flex flex-col h-64 border border-yellow-500/30 bg-yellow-950/30 shadow-lg shadow-yellow-900/10">
+      <div className="absolute inset-0 bg-gradient-to-b from-yellow-900/15 to-gray-950/70 pointer-events-none" />
+
+      <div className="relative px-4 pt-4 pb-1 flex items-start justify-between shrink-0">
+        <div>
+          <p className="text-xs font-semibold text-yellow-400/70 uppercase tracking-widest">В очереди</p>
+          <p className="text-base font-bold text-white leading-tight truncate max-w-[11ch]">
+            {inst.label || inst.device}
+          </p>
+        </div>
+        <DeviceIcon logo={logo} type={inst.device} />
+      </div>
+
+      <div className="relative flex-1 flex flex-col items-center justify-center px-4 gap-1">
+        <span className="text-xs text-yellow-500/70 uppercase tracking-wide font-medium">ожидает</span>
+        <span className="font-mono font-black tabular-nums text-yellow-300 text-4xl leading-none">{waitStr}</span>
+        <span className="text-xs text-gray-500">{session.time} мин</span>
+      </div>
+
+      {session.customer && (
+        <div className="relative px-4 pb-2 shrink-0">
+          <p className="text-xs text-gray-400 truncate">👤 {session.customer}</p>
+        </div>
+      )}
+
+      <div className="relative h-1.5 bg-gray-800 shrink-0">
+        <div className="h-full w-full bg-yellow-500/30 rounded-full" />
+      </div>
+    </div>
+  )
+}
+
 // ---------- FreeCard ----------
 function FreeCard({ inst, logo }: { inst: Instance; logo?: string }) {
   return (
@@ -208,17 +257,18 @@ export default function TVPage() {
     setSessions(prev => { const n = { ...prev }; delete n[instanceId]; return n })
   }, [])
 
-  // только свободные и активные сеансы (QUEUE на TV не показываем)
   const visible = instances.filter(inst => {
     const { type } = inst.schedule
     const isFree    = type === 'N/A' && inst.active
     const session   = sessions[inst.id]
     const isSession = type === 'IN_SESSION' || (!!session && session.status === 'ACTIVE')
-    return isFree || isSession
+    const isQueued  = !!session && session.status === 'QUEUE'
+    return isFree || isSession || isQueued
   })
 
   const freeCount    = visible.filter(i => i.schedule.type === 'N/A').length
   const sessionCount = visible.filter(i => i.schedule.type === 'IN_SESSION' || sessions[i.id]?.status === 'ACTIVE').length
+  const queueCount   = visible.filter(i => sessions[i.id]?.status === 'QUEUE').length
 
   const pad = (n: number) => String(n).padStart(2, '0')
   const clockStr = `${pad(clock.getHours())}:${pad(clock.getMinutes())}:${pad(clock.getSeconds())}`
@@ -256,6 +306,13 @@ export default function TVPage() {
               В сеансе
               <span className="text-orange-400 font-bold text-base">{sessionCount}</span>
             </span>
+            {queueCount > 0 && (
+              <span className="flex items-center gap-2 text-gray-500">
+                <span className="w-2 h-2 rounded-full bg-yellow-400" />
+                В очереди
+                <span className="text-yellow-400 font-bold text-base">{queueCount}</span>
+              </span>
+            )}
           </div>
           <span className="text-3xl font-mono font-black text-white tabular-nums">{clockStr}</span>
         </div>
@@ -277,10 +334,13 @@ export default function TVPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {visible.map(inst => {
               const session = sessions[inst.id] ?? null
-              const isSession = inst.schedule.type === 'IN_SESSION' || !!session
-              return isSession
-                ? <SessionCard key={inst.id} inst={inst} session={session} fetchedAt={fetchedAt} logo={logoMap[inst.device]} onExpire={handleExpire} />
-                : <FreeCard    key={inst.id} inst={inst} logo={logoMap[inst.device]} />
+              const isQueued  = session?.status === 'QUEUE'
+              const isSession = !isQueued && (inst.schedule.type === 'IN_SESSION' || !!session)
+              return isQueued
+                ? <QueueCard   key={inst.id} inst={inst} session={session!} logo={logoMap[inst.device]} />
+                : isSession
+                  ? <SessionCard key={inst.id} inst={inst} session={session} fetchedAt={fetchedAt} logo={logoMap[inst.device]} onExpire={handleExpire} />
+                  : <FreeCard    key={inst.id} inst={inst} logo={logoMap[inst.device]} />
             })}
           </div>
         )}

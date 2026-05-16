@@ -145,12 +145,10 @@ export default function HomePage() {
     refreshEmployees()
   }, [])
 
-  // @ts-ignore
-    const freeCount    = instances.filter(i => i.schedule.type === 'N/A' && i.active).length
-  // @ts-ignore
-    const sessionCount = instances.filter(i => i.schedule.type === 'IN_SESSION').length
-  // @ts-ignore
-    const otherCount   = instances.filter(i => !['N/A', 'IN_SESSION'].includes(i.schedule.type) || !i.active).length
+  const freeCount    = instances.filter(i => i.schedule.type === 'N/A' && i.active).length
+  const sessionCount = instances.filter(i => i.schedule.type === 'IN_SESSION').length
+  const queueCount   = Object.values(sessions).filter(s => s.status === 'QUEUE').length
+  const otherCount   = instances.filter(i => !['N/A', 'IN_SESSION'].includes(i.schedule.type) || !i.active).length
 
   return (
     <div className="px-4 py-5 flex gap-4 items-start">
@@ -175,6 +173,12 @@ export default function HomePage() {
                 <span className="w-1.5 h-1.5 rounded-full bg-orange-500 inline-block" />
                 В сеансе: {sessionCount}
               </span>
+              {queueCount > 0 && (
+                <span className="flex items-center gap-1.5 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 px-2.5 py-1 rounded-full font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 inline-block" />
+                  В ожидании: {queueCount}
+                </span>
+              )}
               {otherCount > 0 && (
                 <span className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2.5 py-1 rounded-full font-medium">
                   <span className="w-1.5 h-1.5 rounded-full bg-gray-400 inline-block" />
