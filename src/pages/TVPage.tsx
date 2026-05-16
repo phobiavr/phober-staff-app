@@ -245,7 +245,6 @@ export default function TVPage() {
 
   useEffect(() => {
     const ch = echo.channel('instances')
-    ch.listen('.SessionCreated', () => load())
     ch.listen('.ScheduleUpdated', () => load())
 
     return () => {

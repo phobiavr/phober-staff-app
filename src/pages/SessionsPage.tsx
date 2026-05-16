@@ -31,11 +31,11 @@ export default function SessionsPage() {
   }, [])
 
   useEffect(() => {
-    const ch = echo.private('instances')
+    const ch = echo.private('sessions')
     ch.listen('.SessionCreated', (e: { session_id: number; instance_id: number }) => {
       getTodaySessions().then(res => setSessions(res.data)).catch(() => {})
     })
-    return () => { echo.leave('instances') }
+    return () => { echo.leave('sessions') }
   }, [])
 
   const total    = sessions.length
