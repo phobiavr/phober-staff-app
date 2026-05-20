@@ -6,6 +6,7 @@ import DeviceCard from '../components/DeviceCard'
 import EmployeePanel from '../components/EmployeePanel'
 import StartSessionModal from '../components/StartSessionModal'
 import { echo } from '../realtime/echo'
+import { useTvPin } from '../contexts/TvPinContext'
 
 export default function HomePage() {
   const [instances, setInstances] = useState<Instance[]>([])
@@ -150,6 +151,8 @@ export default function HomePage() {
     refreshEmployees()
   }, [])
 
+  const { tvPin } = useTvPin()
+
   const freeCount    = instances.filter(i => i.schedule.type === 'N/A' && i.active).length
   const sessionCount = instances.filter(i => i.schedule.type === 'IN_SESSION').length
   const queueCount   = Object.values(sessions).filter(s => s.status === 'QUEUE').length
@@ -169,7 +172,7 @@ export default function HomePage() {
             {!loading && <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">{instances.length} устройств</p>}
           </div>
           {!loading && (
-            <div className="flex flex-wrap gap-2 text-xs">
+            <div className="flex flex-wrap gap-2 text-xs items-center">
               <span className="flex items-center gap-1.5 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 px-2.5 py-1 rounded-full font-medium">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
                 Свободно: {freeCount}

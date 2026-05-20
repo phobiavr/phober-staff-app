@@ -1,8 +1,8 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { generateTvToken } from '../api/tvClient'
+import { useTvPin } from '../contexts/TvPinContext'
 
 const NAV = [
   { to: '/',          label: 'Устройства', icon: '🎮' },
@@ -17,38 +17,17 @@ export default function Layout() {
   const { logout } = useAuth()
   const { theme, toggle } = useTheme()
   const navigate = useNavigate()
-  const [tvCopied, setTvCopied] = useState(false)
+  const { tvPin, setTvPin } = useTvPin()
 
   const handleLogout = () => { logout(); navigate('/login') }
 
-  const copyToClipboard = async (text: string) => {
+  const handleTvPin = async () => {
     try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(text)
-        return
-      }
+      const { pin } = await generateTvToken()
+      setTvPin(pin)
+      setTimeout(() => setTvPin(null), 30_000)
     } catch (e) {
-      console.warn('clipboard api failed, falling back', e)
-    }
-    const ta = document.createElement('textarea')
-    ta.value = text
-    ta.style.position = 'fixed'
-    ta.style.opacity = '0'
-    document.body.appendChild(ta)
-    ta.select()
-    document.execCommand('copy')
-    document.body.removeChild(ta)
-  }
-
-  const handleTvLink = async () => {
-    try {
-      const { params } = await generateTvToken()
-      const tvLink = `${window.location.origin}/tv${params}`
-      await copyToClipboard(tvLink)
-      setTvCopied(true)
-      setTimeout(() => setTvCopied(false), 2500)
-    } catch (e) {
-      console.error('tv link generation failed', e)
+      console.error('tv pin generation failed', e)
     }
   }
 
@@ -82,12 +61,14 @@ export default function Layout() {
               {theme === 'dark' ? '☀️' : '🌙'}
             </button>
             <button
-              onClick={handleTvLink}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm"
-              title="Скопировать TV-ссылку"
+              onClick={handleTvPin}
+              className="flex items-center px-2.5 py-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              title="Сгенерировать TV PIN"
             >
-              <span>📺</span>
-              {tvCopied && <span className="text-xs text-green-600 dark:text-green-400 font-medium">скопировано!</span>}
+              {tvPin
+                ? <span className="font-mono font-bold tracking-widest text-blue-600 dark:text-blue-400">{tvPin}</span>
+                : <span>📺</span>
+              }
             </button>
             <button
               onClick={handleLogout}

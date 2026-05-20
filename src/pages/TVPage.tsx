@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Instance, getInstances, getDevices, buildLogoMap } from '../api/hardware'
-import { fetchTvSessions, getTvParams, storeTvParams } from '../api/tvClient'
+import { fetchTvSessions, getTvParams, resolveTvPin } from '../api/tvClient'
 import { Session } from '../api/sessions'
 import { echo } from '../realtime/echo'
 
@@ -197,6 +197,74 @@ function FreeCard({ inst, logo }: { inst: Instance; logo?: string }) {
   )
 }
 
+// ---------- PinScreen ----------
+function PinScreen({ onSuccess }: { onSuccess: () => void }) {
+  const [digits, setDigits] = useState<string[]>([])
+  const [error, setError]   = useState('')
+  const [busy, setBusy]     = useState(false)
+
+  const press = (d: string) => {
+    if (busy) return
+    setDigits(prev => prev.length < 4 ? [...prev, d] : prev)
+  }
+  const del   = () => { if (!busy) setDigits(prev => prev.slice(0, -1)) }
+  const clear = () => { if (!busy) setDigits([]) }
+
+  useEffect(() => {
+    if (digits.length !== 4 || busy) return
+    setBusy(true)
+    setError('')
+    resolveTvPin(digits.join(''))
+      .then(onSuccess)
+      .catch(() => { setError('Неверный или просроченный PIN'); setDigits([]) })
+      .finally(() => setBusy(false))
+  }, [digits])
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key >= '0' && e.key <= '9') press(e.key)
+      else if (e.key === 'Backspace') del()
+      else if (e.key === 'Escape') clear()
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  })
+
+  const NUMS = ['1','2','3','4','5','6','7','8','9']
+  const btnBase = 'w-20 h-20 rounded-full border-2 border-gray-700 bg-gray-800 text-white text-2xl font-bold flex items-center justify-center cursor-pointer transition-all active:scale-90 hover:border-blue-500 hover:bg-gray-700 select-none'
+
+  return (
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+      <div className="flex flex-col items-center gap-10">
+        <p className="text-gray-500 text-sm uppercase tracking-widest">
+          {busy ? 'Проверка...' : 'Введите PIN-код'}
+        </p>
+
+        <div className="flex gap-4">
+          {[0,1,2,3].map(i => (
+            <div key={i} className={`w-16 h-20 rounded-xl border-2 flex items-center justify-center text-4xl font-black transition-all
+              ${busy ? 'border-blue-400 bg-blue-900/30' : i === digits.length && digits.length < 4 ? 'border-blue-500 bg-gray-800' : 'border-gray-700 bg-gray-900'}
+              ${digits[i] ? 'text-white' : 'text-gray-700'}`}>
+              {digits[i] ?? '–'}
+            </div>
+          ))}
+        </div>
+
+        <p className="text-red-400 text-sm min-h-[1.25rem]">{error}</p>
+
+        <div className="grid grid-cols-3 gap-3">
+          {NUMS.map(n => (
+            <button key={n} className={btnBase} onClick={() => press(n)}>{n}</button>
+          ))}
+          <button className={`${btnBase} text-gray-400 text-base`} onClick={clear} title="Очистить (Esc)">✕</button>
+          <button className={btnBase} onClick={() => press('0')}>0</button>
+          <button className={`${btnBase} text-gray-400 text-lg`} onClick={del} title="Удалить (Backspace)">⌫</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ---------- TVPage ----------
 export default function TVPage() {
   const [instances, setInstances] = useState<Instance[]>([])
@@ -205,20 +273,9 @@ export default function TVPage() {
   const [fetchedAt, setFetchedAt] = useState(Date.now())
   const [loading, setLoading]     = useState(true)
   const [lastRefresh, setLastRefresh] = useState(new Date())
-  const [tokenError, setTokenError]   = useState(false)
+  const [needPin, setNeedPin] = useState(() => !getTvParams())
 
   const clock = useClock()
-
-  // Persist signed params (?expires=...&signature=...) to sessionStorage on first render
-  useEffect(() => {
-    const search = window.location.search
-    const p = new URLSearchParams(search)
-    if (p.get('expires') && p.get('signature')) {
-      storeTvParams(search)
-    } else if (!getTvParams()) {
-      setTokenError(true)
-    }
-  }, [])
 
   const load = useCallback(async () => {
     try {
@@ -232,25 +289,24 @@ export default function TVPage() {
       setLogoMap(buildLogoMap(devices))
       setLastRefresh(new Date())
     } catch {
-      setTokenError(true)
+      setNeedPin(true)
     }
     finally { setLoading(false) }
   }, [])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { if (!needPin) load() }, [load, needPin])
   useEffect(() => {
+    if (needPin) return
     const id = setInterval(load, REFRESH_INTERVAL)
     return () => clearInterval(id)
-  }, [load])
+  }, [load, needPin])
 
   useEffect(() => {
+    if (needPin) return
     const ch = echo.channel('instances')
     ch.listen('.ScheduleUpdated', () => load())
-
-    return () => {
-      echo.leave('instances')
-    }
-  }, [load])
+    return () => { echo.leave('instances') }
+  }, [load, needPin])
 
   const handleExpire = useCallback((instanceId: number) => {
     setSessions(prev => { const n = { ...prev }; delete n[instanceId]; return n })
@@ -272,16 +328,8 @@ export default function TVPage() {
   const pad = (n: number) => String(n).padStart(2, '0')
   const clockStr = `${pad(clock.getHours())}:${pad(clock.getMinutes())}:${pad(clock.getSeconds())}`
 
-  if (tokenError) {
-    return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center text-center px-6">
-        <div>
-          <div className="text-5xl mb-5">🔒</div>
-          <p className="text-xl font-bold text-gray-200 mb-2">Ссылка недействительна</p>
-          <p className="text-sm text-gray-500">Сгенерируйте новую TV-ссылку в приложении</p>
-        </div>
-      </div>
-    )
+  if (needPin) {
+    return <PinScreen onSuccess={() => { setNeedPin(false); setLoading(true) }} />
   }
 
   return (
