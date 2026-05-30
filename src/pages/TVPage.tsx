@@ -70,21 +70,24 @@ function SessionCard({ inst, session, fetchedAt, logo, onExpire }: {
   return (
     <div className={`relative rounded-2xl overflow-hidden flex flex-col h-64 border transition-all
       ${isLow
-        ? 'bg-red-950/60 border-red-500/50 shadow-lg shadow-red-900/30'
-        : 'bg-orange-950/50 border-orange-500/30 shadow-lg shadow-orange-900/20'
+        ? 'bg-gray-900 border-red-500/50 shadow-xl shadow-red-900/30'
+        : 'bg-gray-900 border-orange-500/35 shadow-xl shadow-orange-900/25'
       }`}
     >
-      {/* Фоновый градиент */}
+      <div className={`absolute top-0 left-0 right-0 h-px ${isLow
+        ? 'bg-gradient-to-r from-transparent via-red-400/70 to-transparent'
+        : 'bg-gradient-to-r from-transparent via-orange-400/60 to-transparent'
+      }`} />
       <div className={`absolute inset-0 pointer-events-none ${isLow
-        ? 'bg-gradient-to-b from-red-900/20 to-red-950/60'
-        : 'bg-gradient-to-b from-orange-900/20 to-gray-950/80'
+        ? 'bg-gradient-to-br from-red-900/25 via-transparent to-red-950/30'
+        : 'bg-gradient-to-br from-orange-900/20 via-transparent to-gray-950/60'
       }`} />
 
       {/* Верх: номер + иконка */}
-      <div className="relative px-4 pt-4 pb-1 flex items-start justify-between shrink-0">
+      <div className="relative px-4 pt-3.5 pb-1 flex items-start justify-between shrink-0">
         <div>
-          <p className="text-xs font-semibold text-orange-400/70 uppercase tracking-widest">В сеансе</p>
-          <p className="text-base font-bold text-white leading-tight truncate max-w-[11ch]">
+          <p className={`text-xs font-bold uppercase tracking-widest ${isLow ? 'text-red-400/80' : 'text-orange-400/80'}`}>В сеансе</p>
+          <p className="text-base font-black text-white leading-tight truncate max-w-[11ch]">
             {inst.label || inst.device}
           </p>
         </div>
@@ -137,13 +140,14 @@ function QueueCard({ inst, session, logo }: { inst: Instance; session: Session; 
   const waitStr = h > 0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`
 
   return (
-    <div className="relative rounded-2xl overflow-hidden flex flex-col h-64 border border-yellow-500/30 bg-yellow-950/30 shadow-lg shadow-yellow-900/10">
-      <div className="absolute inset-0 bg-gradient-to-b from-yellow-900/15 to-gray-950/70 pointer-events-none" />
+    <div className="relative rounded-2xl overflow-hidden flex flex-col h-64 border border-yellow-500/35 bg-gray-900 shadow-xl shadow-yellow-900/20">
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-yellow-400/60 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-br from-yellow-900/20 via-transparent to-yellow-950/30 pointer-events-none" />
 
-      <div className="relative px-4 pt-4 pb-1 flex items-start justify-between shrink-0">
+      <div className="relative px-4 pt-3.5 pb-1 flex items-start justify-between shrink-0">
         <div>
-          <p className="text-xs font-semibold text-yellow-400/70 uppercase tracking-widest">В очереди</p>
-          <p className="text-base font-bold text-white leading-tight truncate max-w-[11ch]">
+          <p className="text-xs font-bold text-yellow-400/80 uppercase tracking-widest">В очереди</p>
+          <p className="text-base font-black text-white leading-tight truncate max-w-[11ch]">
             {inst.label || inst.device}
           </p>
         </div>
@@ -162,8 +166,8 @@ function QueueCard({ inst, session, logo }: { inst: Instance; session: Session; 
         </div>
       )}
 
-      <div className="relative h-1.5 bg-gray-800 shrink-0">
-        <div className="h-full w-full bg-yellow-500/30 rounded-full" />
+      <div className="relative h-1 bg-gray-800/80 shrink-0">
+        <div className="h-full bg-gradient-to-r from-transparent via-yellow-500/40 to-transparent" />
       </div>
     </div>
   )
@@ -172,26 +176,31 @@ function QueueCard({ inst, session, logo }: { inst: Instance; session: Session; 
 // ---------- FreeCard ----------
 function FreeCard({ inst, logo }: { inst: Instance; logo?: string }) {
   return (
-    <div className="relative rounded-2xl overflow-hidden flex flex-col h-64 border border-green-500/25 bg-green-950/30 shadow-lg shadow-green-900/10">
-      <div className="absolute inset-0 bg-gradient-to-b from-green-900/15 to-gray-950/70 pointer-events-none" />
+    <div className="relative rounded-2xl overflow-hidden flex flex-col h-64 border border-green-500/30 bg-gray-900 shadow-xl shadow-green-900/20">
+      <div className="absolute inset-0 bg-gradient-to-br from-green-900/20 via-transparent to-green-950/30 pointer-events-none" />
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-green-400/60 to-transparent" />
 
-      <div className="relative px-4 pt-4 pb-1 flex items-start justify-between shrink-0">
-        <div>
-          <p className="text-xs font-semibold text-green-400/70 uppercase tracking-widest">Свободен</p>
-          <p className="text-base font-bold text-white leading-tight truncate max-w-[11ch]">
-            {inst.label || inst.device}
-          </p>
-        </div>
+      <div className="relative px-4 pt-3.5 pb-1 flex items-start justify-between shrink-0">
+        <span className="text-xs font-bold text-green-400 bg-green-500/15 border border-green-500/30 px-2.5 py-0.5 rounded-full uppercase tracking-widest">
+          Свободен
+        </span>
         <DeviceIcon logo={logo} type={inst.device} />
       </div>
 
-      <div className="relative flex-1 flex flex-col items-center justify-center gap-2">
-        <span className="text-4xl font-black text-green-400">✓</span>
-        <span className="text-xs text-green-500/70 font-medium tracking-wide uppercase">готов к игре</span>
+      <div className="relative flex-1 flex flex-col items-center justify-center gap-3">
+        <div className="w-14 h-14 rounded-full bg-green-500/10 border border-green-500/35 flex items-center justify-center shadow-lg shadow-green-500/10">
+          <span className="text-2xl font-black text-green-400">✓</span>
+        </div>
+        <div className="text-center px-3">
+          <p className="text-lg font-black text-white leading-tight truncate max-w-[14ch]">
+            {inst.label || inst.device}
+          </p>
+          <p className="text-xs text-green-500/60 font-medium tracking-widest uppercase mt-0.5">готов к игре</p>
+        </div>
       </div>
 
-      <div className="relative h-1.5 bg-gray-800 shrink-0">
-        <div className="h-full w-full bg-green-500/30 rounded-full" />
+      <div className="relative h-1 bg-gray-800/80 shrink-0">
+        <div className="h-full bg-gradient-to-r from-transparent via-green-500/40 to-transparent" />
       </div>
     </div>
   )
@@ -336,32 +345,35 @@ export default function TVPage() {
     <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col select-none">
 
       {/* Шапка */}
-      <header className="px-6 py-3.5 flex items-center justify-between border-b border-gray-800/80 shrink-0">
-        <div className="flex items-center gap-3">
+      <header className="px-6 py-3.5 flex items-center justify-between border-b border-gray-800 bg-gray-900/60 backdrop-blur-sm shrink-0">
+        <div className="flex items-center gap-2.5">
           <span className="text-2xl">🎮</span>
-          <span className="text-xl font-black tracking-tight text-white">Phober VR</span>
+          <span className="text-xl font-black tracking-tight text-white">
+            Phober <span className="text-orange-400">VR</span>
+          </span>
         </div>
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-5 text-sm">
-            <span className="flex items-center gap-2 text-gray-500">
-              <span className="w-2 h-2 rounded-full bg-green-400" />
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/12 border border-green-500/30 text-green-400 font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />
               Свободно
-              <span className="text-green-400 font-bold text-base">{freeCount}</span>
+              <span className="font-black text-base ml-0.5">{freeCount}</span>
             </span>
-            <span className="flex items-center gap-2 text-gray-500">
-              <span className="w-2 h-2 rounded-full bg-orange-400" />
+            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/12 border border-orange-500/30 text-orange-400 font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0" />
               В сеансе
-              <span className="text-orange-400 font-bold text-base">{sessionCount}</span>
+              <span className="font-black text-base ml-0.5">{sessionCount}</span>
             </span>
             {queueCount > 0 && (
-              <span className="flex items-center gap-2 text-gray-500">
-                <span className="w-2 h-2 rounded-full bg-yellow-400" />
-                В очереди
-                <span className="text-yellow-400 font-bold text-base">{queueCount}</span>
+              <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-500/12 border border-yellow-500/30 text-yellow-400 font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 shrink-0" />
+                Очередь
+                <span className="font-black text-base ml-0.5">{queueCount}</span>
               </span>
             )}
           </div>
-          <span className="text-3xl font-mono font-black text-white tabular-nums">{clockStr}</span>
+          <div className="h-7 w-px bg-gray-700" />
+          <span className="text-3xl font-mono font-black text-white tabular-nums tracking-wider">{clockStr}</span>
         </div>
       </header>
 
