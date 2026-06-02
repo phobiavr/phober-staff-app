@@ -112,109 +112,199 @@ export default function CustomerModal({ customer, onSave, onClose }: Props) {
   }
 
   const inputCls = 'w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-sm outline-none focus:border-blue-400 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 transition-all'
-  const labelCls = 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5'
+  const labelCls = 'block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5'
+  const selectCls = 'px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm outline-none focus:border-blue-400 dark:focus:border-blue-500 transition-all'
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50">
-      <div className="bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md max-h-[92vh] overflow-y-auto">
-        <div className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-5">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm">
+      <div className="bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-3xl max-h-[92vh] flex flex-col">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
             {customer ? 'Редактировать клиента' : 'Новый клиент'}
           </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-lg leading-none"
+          >
+            ✕
+          </button>
+        </div>
 
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-6">
           {error && (
-            <div className="mb-4 px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl text-sm text-red-600 dark:text-red-400">
+            <div className="mb-5 px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl text-sm text-red-600 dark:text-red-400">
               {error}
             </div>
           )}
 
-          {/* Имя + Фамилия */}
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div>
-              <label className={labelCls}>Имя <span className="text-red-400">*</span></label>
-              <input
-                type="text"
-                value={form.first_name}
-                onChange={e => set('first_name', e.target.value)}
-                placeholder="Иван"
-                className={inputCls}
-              />
-            </div>
-            <div>
-              <label className={labelCls}>Фамилия <span className="text-red-400">*</span></label>
-              <input
-                type="text"
-                value={form.last_name}
-                onChange={e => set('last_name', e.target.value)}
-                placeholder="Иванов"
-                className={inputCls}
-              />
-            </div>
-          </div>
+          <div className="grid sm:grid-cols-2 gap-6">
+            {/* Left — основные данные */}
+            <div className="space-y-4">
+              {/* Имя + Фамилия */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>Имя <span className="text-red-400 normal-case tracking-normal">*</span></label>
+                  <input
+                    type="text"
+                    value={form.first_name}
+                    onChange={e => set('first_name', e.target.value)}
+                    placeholder="Иван"
+                    className={inputCls}
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>Фамилия <span className="text-red-400 normal-case tracking-normal">*</span></label>
+                  <input
+                    type="text"
+                    value={form.last_name}
+                    onChange={e => set('last_name', e.target.value)}
+                    placeholder="Иванов"
+                    className={inputCls}
+                  />
+                </div>
+              </div>
 
-          {/* Дата рождения + Пол */}
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div>
-              <label className={labelCls}>Дата рождения <span className="text-red-400">*</span></label>
-              <input
-                type="date"
-                value={form.birthday}
-                onChange={e => set('birthday', e.target.value)}
-                className={inputCls}
-              />
+              {/* Дата рождения */}
+              <div>
+                <label className={labelCls}>Дата рождения <span className="text-red-400 normal-case tracking-normal">*</span></label>
+                <input
+                  type="date"
+                  value={form.birthday}
+                  onChange={e => set('birthday', e.target.value)}
+                  className={inputCls}
+                />
+              </div>
+
+              {/* Пол */}
+              <div>
+                <label className={labelCls}>Пол</label>
+                <div className="flex gap-2">
+                  {[{ v: 'M', l: '♂ Мужской' }, { v: 'F', l: '♀ Женский' }].map(({ v, l }) => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => set('gender', form.gender === v ? null : v)}
+                      className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors ${
+                        form.gender === v
+                          ? 'bg-blue-50 dark:bg-blue-950 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300'
+                          : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                      }`}
+                    >
+                      {l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Заметка */}
+              <div>
+                <label className={labelCls}>Заметка</label>
+                <textarea
+                  value={form.note ?? ''}
+                  onChange={e => set('note', e.target.value)}
+                  placeholder="Любая информация о клиенте..."
+                  rows={4}
+                  className={inputCls + ' resize-none'}
+                />
+              </div>
             </div>
-            <div>
-              <label className={labelCls}>Пол</label>
-              <div className="flex gap-2 h-[42px]">
-                {[{ v: 'M', l: '♂ Муж' }, { v: 'F', l: '♀ Жен' }].map(({ v, l }) => (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => set('gender', form.gender === v ? null : v)}
-                    className={`flex-1 rounded-xl text-sm font-medium border transition-colors ${
-                      form.gender === v
-                        ? 'bg-blue-50 dark:bg-blue-950 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300'
-                        : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
-                    }`}
-                  >
-                    {l}
-                  </button>
-                ))}
+
+            {/* Right — лояльность */}
+            <div className="space-y-4">
+              {/* Карта лояльности */}
+              <div className="border border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => toggleCard(!hasCard)}
+                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">💳</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Карта лояльности</span>
+                    {customer?.loyalty_card && (
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${LOYALTY_COLOR[customer.loyalty_card.status]}`}>
+                        {LOYALTY_LABEL[customer.loyalty_card.status]}
+                      </span>
+                    )}
+                  </div>
+                  <div className={`w-10 h-5 rounded-full transition-colors relative shrink-0 ${hasCard ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'}`}>
+                    <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${hasCard ? 'left-5' : 'left-0.5'}`} />
+                  </div>
+                </button>
+
+                {hasCard && (
+                  <div className="px-4 pb-4 space-y-3 border-t border-gray-100 dark:border-gray-800 pt-3">
+                    <div>
+                      <label className={labelCls}>Тир</label>
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {TIERS.map(tier => (
+                          <button
+                            key={tier}
+                            type="button"
+                            onClick={() => setCardStatus(tier)}
+                            className={`py-2 rounded-xl text-xs font-bold border transition-colors ${
+                              cardStatus === tier
+                                ? LOYALTY_COLOR[tier] + ' border-current'
+                                : 'border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:border-gray-300 dark:hover:border-gray-600'
+                            }`}
+                          >
+                            {LOYALTY_LABEL[tier]}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className={labelCls}>Код карты</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={cardCode}
+                          onChange={e => setCardCode(e.target.value.toUpperCase())}
+                          placeholder="PH-XXXX-XXXX"
+                          className={inputCls + ' font-mono tracking-wide flex-1'}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setCardCode(genCode())}
+                          className="px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors shrink-0"
+                          title="Сгенерировать код"
+                        >
+                          ↻
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Заметка */}
-          <div className="mb-4">
-            <label className={labelCls}>Заметка</label>
-            <textarea
-              value={form.note ?? ''}
-              onChange={e => set('note', e.target.value)}
-              placeholder="Любая информация о клиенте..."
-              rows={2}
-              className={inputCls + ' resize-none'}
-            />
-          </div>
-
-          {/* Контакты */}
-          <div className="mb-4">
+          {/* Контакты — на всю ширину */}
+          <div className="mt-6">
             <div className="flex items-center justify-between mb-1.5">
               <label className={labelCls + ' mb-0'}>Контакты</label>
               <button
                 type="button"
                 onClick={addContact}
-                className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold"
               >
                 + добавить
               </button>
             </div>
             <div className="space-y-2">
+              {(form.contacts ?? []).length === 0 && (
+                <p className="text-sm text-gray-400 dark:text-gray-500 py-2">Нет контактов</p>
+              )}
               {(form.contacts ?? []).map((c, i) => (
                 <div key={i} className="flex gap-2">
                   <select
                     value={c.type}
                     onChange={e => setContact(i, 'type', e.target.value)}
-                    className="w-32 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm outline-none focus:border-blue-400 dark:focus:border-blue-500 transition-all"
+                    className={selectCls + ' w-32 shrink-0'}
                   >
                     {CONTACT_TYPES.map(t => (
                       <option key={t} value={t}>{t}</option>
@@ -230,7 +320,7 @@ export default function CustomerModal({ customer, onSave, onClose }: Props) {
                   <button
                     type="button"
                     onClick={() => removeContact(i)}
-                    className="px-2 text-gray-400 hover:text-red-500 transition-colors"
+                    className="px-2 text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                   >
                     ✕
                   </button>
@@ -238,94 +328,25 @@ export default function CustomerModal({ customer, onSave, onClose }: Props) {
               ))}
             </div>
           </div>
+        </div>
 
-          {/* Карта лояльности */}
-          <div className="mb-6 border border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden">
-            <button
-              type="button"
-              onClick={() => toggleCard(!hasCard)}
-              className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-base">💳</span>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Карта лояльности</span>
-                {customer?.loyalty_card && (
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${LOYALTY_COLOR[customer.loyalty_card.status]}`}>
-                    {LOYALTY_LABEL[customer.loyalty_card.status]}
-                  </span>
-                )}
-              </div>
-              <div className={`w-10 h-5 rounded-full transition-colors relative ${hasCard ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'}`}>
-                <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${hasCard ? 'left-5' : 'left-0.5'}`} />
-              </div>
-            </button>
-
-            {hasCard && (
-              <div className="px-4 pb-4 space-y-3 border-t border-gray-100 dark:border-gray-800 pt-3">
-                {/* Тир */}
-                <div>
-                  <label className={labelCls}>Тир</label>
-                  <div className="grid grid-cols-4 gap-1.5">
-                    {TIERS.map(tier => (
-                      <button
-                        key={tier}
-                        type="button"
-                        onClick={() => setCardStatus(tier)}
-                        className={`py-2 rounded-xl text-xs font-bold border transition-colors ${
-                          cardStatus === tier
-                            ? LOYALTY_COLOR[tier] + ' border-current'
-                            : 'border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:border-gray-300 dark:hover:border-gray-600'
-                        }`}
-                      >
-                        {LOYALTY_LABEL[tier]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Код */}
-                <div>
-                  <label className={labelCls}>Код карты</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={cardCode}
-                      onChange={e => setCardCode(e.target.value.toUpperCase())}
-                      placeholder="PH-XXXX-XXXX"
-                      className={inputCls + ' font-mono tracking-wide flex-1'}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setCardCode(genCode())}
-                      className="px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors shrink-0"
-                      title="Сгенерировать код"
-                    >
-                      ↻
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Кнопки */}
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            >
-              Отмена
-            </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={saving}
-              className="flex-1 py-3 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {saving ? 'Сохранение...' : 'Сохранить'}
-            </button>
-          </div>
+        {/* Footer */}
+        <div className="flex gap-3 px-6 py-4 border-t border-gray-100 dark:border-gray-800 shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          >
+            Отмена
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={saving}
+            className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {saving ? 'Сохранение...' : 'Сохранить'}
+          </button>
         </div>
       </div>
     </div>
