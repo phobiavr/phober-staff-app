@@ -1,4 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { generateTvToken } from '../api/tvClient'
@@ -19,6 +20,17 @@ export default function Layout() {
   const navigate = useNavigate()
   const { tvPin, setTvPin } = useTvPin()
 
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem('sidebar-collapsed') === 'true'
+  )
+
+  const toggleSidebar = () => {
+    setCollapsed(prev => {
+      localStorage.setItem('sidebar-collapsed', String(!prev))
+      return !prev
+    })
+  }
+
   const handleLogout = () => { logout(); navigate('/login') }
 
   const handleTvPin = async () => {
@@ -38,6 +50,13 @@ export default function Layout() {
         : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100'
     }`
 
+  const collapsedLinkClass = ({ isActive }: { isActive: boolean }) =>
+    `flex items-center justify-center w-full py-2.5 rounded-xl transition-colors ${
+      isActive
+        ? 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400'
+        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100'
+    }`
+
   const bottomLinkClass = ({ isActive }: { isActive: boolean }) =>
     `flex flex-col items-center gap-0.5 flex-1 py-2 text-xs font-medium transition-colors ${
       isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'
@@ -50,7 +69,7 @@ export default function Layout() {
         <div className="px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xl">🎮</span>
-            <span className="font-bold text-gray-900 dark:text-gray-100">Phober Staff</span>
+            {!collapsed && <span className="font-bold text-gray-900 dark:text-gray-100">Phober Staff</span>}
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -82,13 +101,34 @@ export default function Layout() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar — desktop */}
-        <aside className="hidden md:flex flex-col w-48 shrink-0 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 p-3 gap-1">
-          {NAV.map(item => (
-            <NavLink key={item.to} to={item.to} end={item.to === '/'} className={linkClass}>
-              <span className="text-base">{item.icon}</span>
-              {item.label}
-            </NavLink>
-          ))}
+        <aside className={`hidden md:flex flex-col shrink-0 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 transition-all duration-200 ${collapsed ? 'w-10' : 'w-48'}`}>
+          {/* Кнопка коллапса — вверху, как у правой панели */}
+          <button
+            onClick={toggleSidebar}
+            className={`shrink-0 flex items-center py-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${collapsed ? 'justify-center px-2' : 'gap-2 px-3'}`}
+            title={collapsed ? 'Развернуть' : 'Свернуть'}
+          >
+            <span className="text-base leading-none">{collapsed ? '›' : '‹'}</span>
+            {!collapsed && <span className="text-xs text-gray-400">Меню</span>}
+          </button>
+
+          {/* Навигация */}
+          <div className={`flex flex-col flex-1 gap-0.5 ${collapsed ? 'px-1' : 'px-2 pb-2'}`}>
+            {NAV.map(item => (
+              collapsed
+                ? (
+                  <NavLink key={item.to} to={item.to} end={item.to === '/'} className={collapsedLinkClass} title={item.label}>
+                    <span className="text-lg">{item.icon}</span>
+                  </NavLink>
+                )
+                : (
+                  <NavLink key={item.to} to={item.to} end={item.to === '/'} className={linkClass}>
+                    <span className="text-base shrink-0">{item.icon}</span>
+                    {item.label}
+                  </NavLink>
+                )
+            ))}
+          </div>
         </aside>
 
         {/* Main content */}

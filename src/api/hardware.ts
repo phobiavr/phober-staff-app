@@ -2,8 +2,13 @@ import client from './client'
 import { API_BASE_URL } from '../config'
 
 export interface Schedule {
-  type: string     // IN_SESSION | MAINTENANCE | RESERVATION | INSPECTION | REPAIR | ON_EVENT | CANCELED | N/A
+  type: string      // IN_SESSION | MAINTENANCE | RESERVATION | INSPECTION | REPAIR | ON_EVENT | CANCELED | N/A
   countdown: number // seconds remaining, -1 = no end date, 0 = no schedule
+}
+
+export interface UpcomingSchedule {
+  type: string
+  starts_in: number // seconds until start
 }
 
 export interface Instance {
@@ -12,6 +17,7 @@ export interface Instance {
   device: string
   active: boolean
   schedule: Schedule | null
+  upcoming_schedule: UpcomingSchedule | null
 }
 
 export interface Device {

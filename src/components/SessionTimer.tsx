@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 
 interface Props {
-  endsAt: number  // Unix timestamp ms
+  endsAt: number
   onExpire: () => void
+  className?: string
 }
 
-export default function SessionTimer({ endsAt, onExpire }: Props) {
+export default function SessionTimer({ endsAt, onExpire, className }: Props) {
   const [remaining, setRemaining] = useState(() =>
     Math.max(0, Math.floor((endsAt - Date.now()) / 1000))
   )
@@ -31,8 +32,9 @@ export default function SessionTimer({ endsAt, onExpire }: Props) {
   const pad = (n: number) => String(n).padStart(2, '0')
   const isLow = remaining > 0 && remaining <= 60
 
+  const defaultCls = isLow ? 'text-red-500 animate-pulse' : 'text-blue-600 dark:text-blue-400'
   return (
-    <span className={`font-mono font-bold text-lg tabular-nums ${isLow ? 'text-red-500 animate-pulse' : 'text-green-600'}`}>
+    <span className={`font-mono font-bold text-2xl tabular-nums leading-none ${className ?? defaultCls}`}>
       {h > 0 ? `${pad(h)}:` : ''}{pad(m)}:{pad(s)}
     </span>
   )

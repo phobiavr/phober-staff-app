@@ -51,7 +51,7 @@ export default function EmployeePanel({ employees, loading }: Props) {
     }))
 
   return (
-    <div className="w-56 shrink-0 flex flex-col gap-3">
+    <div className="flex flex-col gap-3">
 
       {/* Заголовок + переключатель периода */}
       <div>

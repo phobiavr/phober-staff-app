@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Instance, getInstances, getDevices, buildLogoMap } from '../api/hardware'
+import { EXPIRE_REFETCH_DELAY } from '../config'
 import { Session, CreateSessionParams, createSession, startSession, cancelSession, finishSession, getSessions } from '../api/sessions'
 import { Employee, getEmployees } from '../api/staff'
 import DeviceCard from '../components/DeviceCard'
@@ -13,6 +14,13 @@ export default function HomePage() {
   const [sessions, setSessions] = useState<Record<number, Session>>({})
   const [employees, setEmployees] = useState<Employee[]>([])
   const [logoMap, setLogoMap] = useState<Record<string, string>>({})
+  const [staffCollapsed, setStaffCollapsed] = useState(
+    () => localStorage.getItem('staff-panel-collapsed') === 'true'
+  )
+  const toggleStaff = () => setStaffCollapsed(prev => {
+    localStorage.setItem('staff-panel-collapsed', String(!prev))
+    return !prev
+  })
   const [fetchedAt, setFetchedAt] = useState<number>(Date.now())
   const [loading, setLoading] = useState(true)
   const [employeesLoading, setEmployeesLoading] = useState(true)
@@ -38,18 +46,20 @@ export default function HomePage() {
       .finally(() => setEmployeesLoading(false))
   }, [])
 
-  useEffect(() => {
-    const refresh = () =>
-      Promise.all([getInstances(), getSessions()])
-        .then(([instancesRes, sessionsRes]) => {
-          setInstances(instancesRes.data)
-          setFetchedAt(Date.now())
-          const map: Record<number, Session> = {}
-          for (const s of sessionsRes.data) map[s.instance_id] = s
-          setSessions(map)
-        })
-        .catch(() => {})
+  const refresh = useCallback(() =>
+    Promise.all([getInstances(), getSessions()])
+      .then(([instancesRes, sessionsRes]) => {
+        setInstances(instancesRes.data)
+        setFetchedAt(Date.now())
+        const map: Record<number, Session> = {}
+        for (const s of sessionsRes.data) map[s.instance_id] = s
+        setSessions(map)
+      })
+      .catch(() => {}),
+    []
+  )
 
+  useEffect(() => {
     const sessionsCh = echo.private('sessions')
     sessionsCh.subscribed(() => console.log('[ws] subscribed sessions'))
     sessionsCh.error((err: unknown) => console.error('[ws] channel error', err))
@@ -70,14 +80,7 @@ export default function HomePage() {
       echo.leave('sessions')
       echo.leave('instances')
     }
-  }, [])
-
-  const refreshInstances = async () => {
-    const ts = Date.now()
-    const res = await getInstances()
-    setInstances(res.data)
-    setFetchedAt(ts)
-  }
+  }, [refresh])
 
   const refreshEmployees = async () => {
     const res = await getEmployees()
@@ -92,7 +95,7 @@ export default function HomePage() {
       const { data: session } = await createSession({ ...params, instance_id: inst.id })
       setSessions(prev => ({ ...prev, [inst.id]: session }))
       setFetchedAt(Date.now())
-      refreshInstances()
+      refresh()
       refreshEmployees()
     } catch {}
   }
@@ -102,7 +105,7 @@ export default function HomePage() {
       const { data: updated } = await startSession(session.id)
       setSessions(prev => ({ ...prev, [session.instance_id]: updated }))
       setFetchedAt(Date.now())
-      refreshInstances()
+      refresh()
     } catch {}
   }
 
@@ -115,7 +118,7 @@ export default function HomePage() {
     try {
       await cancelSession(session.id)
     } finally {
-      refreshInstances()
+      refresh()
       refreshEmployees()
     }
   }
@@ -129,7 +132,7 @@ export default function HomePage() {
     try {
       await finishSession(session.id)
     } finally {
-      refreshInstances()
+      refresh()
       refreshEmployees()
     }
   }
@@ -147,9 +150,11 @@ export default function HomePage() {
     if (session) {
       try { await finishSession(session.id) } catch {}
     }
-    refreshInstances()
-    refreshEmployees()
-  }, [])
+    setTimeout(() => {
+      refresh()
+      refreshEmployees()
+    }, EXPIRE_REFETCH_DELAY)
+  }, [refresh])
 
   const { tvPin } = useTvPin()
 
@@ -159,38 +164,34 @@ export default function HomePage() {
   const otherCount   = instances.filter(i => !['N/A', 'IN_SESSION'].includes(i.schedule.type) || !i.active).length
 
   return (
-    <div className="px-4 py-5 flex gap-4 items-start">
+    <div className="flex h-full">
 
-      {/* Левая панель: сотрудники */}
-      <EmployeePanel employees={employees} loading={employeesLoading} />
+      {/* Центр: устройства */}
+      <div className="flex-1 min-w-0 px-4 py-5">
 
-      {/* Правая часть: устройства */}
-      <div className="flex-1 min-w-0">
+        {/* Шапка */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Устройства</h1>
-            {!loading && <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">{instances.length} устройств</p>}
-          </div>
+          <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">Устройства</h1>
           {!loading && (
-            <div className="flex flex-wrap gap-2 text-xs items-center">
-              <span className="flex items-center gap-1.5 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 px-2.5 py-1 rounded-full font-medium">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
-                Свободно: {freeCount}
+            <div className="flex flex-wrap gap-1.5 text-xs items-center">
+              <span className="flex items-center gap-1.5 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 px-2.5 py-1 rounded-full font-medium border border-green-100 dark:border-green-900/40">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
+                Свободно {freeCount}
               </span>
-              <span className="flex items-center gap-1.5 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 px-2.5 py-1 rounded-full font-medium">
-                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 inline-block" />
-                В сеансе: {sessionCount}
+              <span className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 px-2.5 py-1 rounded-full font-medium border border-blue-100 dark:border-blue-900/40">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                В сеансе {sessionCount}
               </span>
               {queueCount > 0 && (
-                <span className="flex items-center gap-1.5 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 px-2.5 py-1 rounded-full font-medium">
-                  <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 inline-block" />
-                  В ожидании: {queueCount}
+                <span className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 px-2.5 py-1 rounded-full font-medium border border-amber-100 dark:border-amber-900/40">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                  Очередь {queueCount}
                 </span>
               )}
               {otherCount > 0 && (
-                <span className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2.5 py-1 rounded-full font-medium">
-                  <span className="w-1.5 h-1.5 rounded-full bg-gray-400 inline-block" />
-                  Прочее: {otherCount}
+                <span className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 px-2.5 py-1 rounded-full font-medium border border-gray-200 dark:border-gray-700">
+                  <span className="w-1.5 h-1.5 rounded-full bg-gray-400 shrink-0" />
+                  Прочее {otherCount}
                 </span>
               )}
             </div>
@@ -224,6 +225,25 @@ export default function HomePage() {
                 onExpire={handleExpire}
               />
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* Правая панель: сотрудники */}
+      <div className={`hidden lg:flex flex-col shrink-0 border-l border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 transition-all duration-200 ${staffCollapsed ? 'w-10' : 'w-60'}`}>
+        {/* Кнопка коллапса */}
+        <button
+          onClick={toggleStaff}
+          className={`shrink-0 flex items-center py-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors text-sm font-medium ${staffCollapsed ? 'justify-center px-2' : 'gap-2 px-3'}`}
+          title={staffCollapsed ? 'Развернуть сотрудников' : 'Свернуть'}
+        >
+          <span className="text-base leading-none">{staffCollapsed ? '‹' : '›'}</span>
+          {!staffCollapsed && <span className="text-xs text-gray-400">Сотрудники</span>}
+        </button>
+
+        {!staffCollapsed && (
+          <div className="flex-1 overflow-y-auto px-3 pb-5">
+            <EmployeePanel employees={employees} loading={employeesLoading} />
           </div>
         )}
       </div>
