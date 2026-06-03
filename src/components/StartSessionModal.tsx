@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Instance } from '../api/hardware'
 import { SessionTime, CreateSessionParams } from '../api/sessions'
-import { Employee, getEmployees } from '../api/staff'
+import { Employee } from '../api/staff'
 import { Customer, searchCustomers } from '../api/crm'
-import { Invoice, getOpenInvoices } from '../api/invoices'
-import { TariffPlan, TariffType, getTariffPlans, getCurrentTariff } from '../api/tariffs'
+import { Invoice } from '../api/invoices'
+import { TariffPlan, TariffType, getCurrentTariff } from '../api/tariffs'
 
 const TIME_OPTIONS: { label: string; value: SessionTime }[] = [
   { label: '15 мин', value: 'MIN_15' },
@@ -20,23 +20,25 @@ const TARIFF_LABELS: Record<TariffType, string> = {
 
 interface Props {
   instance: Instance
+  employees: Employee[]
+  employeesLoading: boolean
+  invoices: Invoice[]
+  tariffPlans: TariffPlan[]
   onConfirm: (params: Omit<CreateSessionParams, 'instance_id'>) => void
   onClose: () => void
 }
 
 const selectCls = 'w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm outline-none focus:border-blue-400 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 transition-all'
 
-export default function StartSessionModal({ instance, onConfirm, onClose }: Props) {
+export default function StartSessionModal({ instance, employees, employeesLoading, invoices, tariffPlans, onConfirm, onClose }: Props) {
   const [time, setTime] = useState<SessionTime>('MIN_15')
 
-  const [employees, setEmployees] = useState<Employee[]>([])
-  const [employeeLoading, setEmployeeLoading] = useState(true)
-  const [selectedEmployee, setSelectedEmployee] = useState<string>('')
+  const [selectedEmployee, setSelectedEmployee] = useState<string>(
+    () => employees.length > 0 ? String(employees[0].id) : ''
+  )
 
-  const [invoices, setInvoices] = useState<Invoice[]>([])
   const [selectedInvoice, setSelectedInvoice] = useState<string>('')
 
-  const [tariffPlans, setTariffPlans] = useState<TariffPlan[]>([])
   const [currentTariff] = useState<TariffType>(getCurrentTariff)
 
   const [customerSearch, setCustomerSearch] = useState('')
@@ -47,17 +49,6 @@ export default function StartSessionModal({ instance, onConfirm, onClose }: Prop
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const dropdownRef  = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    Promise.all([getEmployees(), getOpenInvoices(), getTariffPlans()])
-      .then(([empRes, invs, plans]) => {
-        setEmployees(empRes.data)
-        if (empRes.data.length === 1) setSelectedEmployee(String(empRes.data[0].id))
-        setInvoices(invs)
-        setTariffPlans(plans)
-      })
-      .finally(() => setEmployeeLoading(false))
-  }, [])
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -154,7 +145,7 @@ export default function StartSessionModal({ instance, onConfirm, onClose }: Prop
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
                 Сотрудник <span className="text-red-400">*</span>
               </p>
-              {employeeLoading ? (
+              {employeesLoading ? (
                 <div className="h-10 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
               ) : (
                 <select

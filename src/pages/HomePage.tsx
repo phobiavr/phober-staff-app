@@ -3,6 +3,8 @@ import { Instance, getInstances, getDevices, buildLogoMap } from '../api/hardwar
 import { EXPIRE_REFETCH_DELAY } from '../config'
 import { Session, CreateSessionParams, createSession, startSession, cancelSession, finishSession, getSessions } from '../api/sessions'
 import { Employee, getEmployees } from '../api/staff'
+import { Invoice, getOpenInvoices } from '../api/invoices'
+import { TariffPlan, getTariffPlans } from '../api/tariffs'
 import DeviceCard from '../components/DeviceCard'
 import EmployeePanel from '../components/EmployeePanel'
 import StartSessionModal from '../components/StartSessionModal'
@@ -13,6 +15,8 @@ export default function HomePage() {
   const [instances, setInstances] = useState<Instance[]>([])
   const [sessions, setSessions] = useState<Record<number, Session>>({})
   const [employees, setEmployees] = useState<Employee[]>([])
+  const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [tariffPlans, setTariffPlans] = useState<TariffPlan[]>([])
   const [logoMap, setLogoMap] = useState<Record<string, string>>({})
   const [staffCollapsed, setStaffCollapsed] = useState(
     () => localStorage.getItem('staff-panel-collapsed') === 'true'
@@ -28,14 +32,16 @@ export default function HomePage() {
 
   useEffect(() => {
     const ts = Date.now()
-    Promise.all([getInstances(), getSessions(), getDevices()])
-      .then(([instancesRes, sessionsRes, devices]) => {
+    Promise.all([getInstances(), getSessions(), getDevices(), getOpenInvoices(), getTariffPlans()])
+      .then(([instancesRes, sessionsRes, devices, invs, plans]) => {
         setInstances(instancesRes.data)
         setFetchedAt(ts)
         const map: Record<number, Session> = {}
         for (const s of sessionsRes.data) map[s.instance_id] = s
         setSessions(map)
         setLogoMap(buildLogoMap(devices))
+        setInvoices(invs)
+        setTariffPlans(plans)
       })
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -87,6 +93,11 @@ export default function HomePage() {
     setEmployees(res.data)
   }
 
+  const refreshInvoices = async () => {
+    const invs = await getOpenInvoices()
+    setInvoices(invs)
+  }
+
   const handleStartConfirm = async (params: Omit<CreateSessionParams, 'instance_id'>) => {
     if (!selectedInstance) return
     const inst = selectedInstance
@@ -97,6 +108,7 @@ export default function HomePage() {
       setFetchedAt(Date.now())
       refresh()
       refreshEmployees()
+      refreshInvoices()
     } catch {}
   }
 
@@ -251,6 +263,10 @@ export default function HomePage() {
       {selectedInstance && (
         <StartSessionModal
           instance={selectedInstance}
+          employees={employees}
+          employeesLoading={employeesLoading}
+          invoices={invoices}
+          tariffPlans={tariffPlans}
           onConfirm={handleStartConfirm}
           onClose={() => setSelectedInstance(null)}
         />
