@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Invoice, getInvoices, payInvoice, cancelInvoice } from '../api/invoices'
 import { setSessionDiscount } from '../api/sessions'
 import { printInvoice } from '../utils/printInvoice'
@@ -19,14 +19,6 @@ const fmtDate = (iso: string) => {
 const fmtTime = (iso: string) => {
   const d = new Date(iso)
   return d.toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' })
-}
-
-function startOf(period: PeriodFilter): Date {
-  const d = new Date()
-  d.setHours(0, 0, 0, 0)
-  if (period === 'WEEK') d.setDate(d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1))
-  if (period === 'MONTH') d.setDate(1)
-  return d
 }
 
 function invoiceDate(inv: Invoice): Date | null {
@@ -292,21 +284,41 @@ function PaymentForm({ total, onConfirm, onCancel }: PaymentFormProps) {
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
+  const [fetching, setFetching] = useState(false)
   const [filter, setFilter] = useState<StatusFilter>('QUEUE')
   const [period, setPeriod] = useState<PeriodFilter>('TODAY')
   const [expanded, setExpanded] = useState<number | null>(null)
   const [paying, setPaying] = useState<number | null>(null)
   const [applyingDiscount, setApplyingDiscount] = useState<number | null>(null)
+  const isFirstLoad = useRef(true)
 
-  const load = () => {
-    setLoading(true)
-    getInvoices()
-      .then(data => setInvoices(data.reverse()))
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }
+  const load = useCallback(() => {
+    if (isFirstLoad.current) {
+      setLoading(true)
+    } else {
+      setFetching(true)
+      setExpanded(null)
+    }
+    getInvoices({
+      status: filter === 'ALL' ? undefined : filter,
+      period,
+    })
+      .then(data => {
+        setInvoices(data.reverse())
+        if (isFirstLoad.current) {
+          isFirstLoad.current = false
+          setLoading(false)
+        } else {
+          setFetching(false)
+        }
+      })
+      .catch(() => {
+        setLoading(false)
+        setFetching(false)
+      })
+  }, [filter, period])
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [load])
 
   const handlePay = async (id: number, method: Record<string, number>) => {
     await payInvoice(id, method)
@@ -343,29 +355,14 @@ export default function InvoicesPage() {
     load()
   }
 
-  const periodStart = startOf(period)
-  const inPeriod = invoices.filter(inv => {
-    const d = invoiceDate(inv)
-    return d ? d >= periodStart : true
-  })
-
-  const visible = (filter === 'ALL' ? inPeriod : inPeriod.filter(i => i.status === filter))
-
-  const counts = {
-    QUEUE:    inPeriod.filter(i => i.status === 'QUEUE').length,
-    PAYED:    inPeriod.filter(i => i.status === 'PAYED').length,
-    CANCELED: inPeriod.filter(i => i.status === 'CANCELED').length,
-  }
-
   return (
     <div className="px-4 py-5">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <div>
           <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Счета</h1>
-          {!loading && <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">{visible.length} из {invoices.length}</p>}
+          {!loading && <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">{invoices.length} счетов</p>}
         </div>
-        {!loading && (
-          <div className="flex flex-col items-end gap-2">
+        <div className="flex flex-col items-end gap-2">
             {/* Период */}
             <div className="flex gap-1">
               {(Object.keys(PERIOD_LABELS) as PeriodFilter[]).map(p => (
@@ -395,28 +392,25 @@ export default function InvoicesPage() {
                   }`}
                 >
                   {FILTER_LABELS[f]}
-                  {f !== 'ALL' && counts[f] > 0 && <span className="ml-1 opacity-75">({counts[f]})</span>}
                 </button>
               ))}
             </div>
           </div>
-        )}
       </div>
-
       {loading ? (
         <div className="space-y-2">
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="h-16 bg-white dark:bg-gray-900 rounded-xl animate-pulse border border-gray-100 dark:border-gray-800" />
           ))}
         </div>
-      ) : visible.length === 0 ? (
+      ) : invoices.length === 0 && !fetching ? (
         <div className="text-center py-20 text-gray-400 dark:text-gray-600">
           <div className="text-4xl mb-3">🧾</div>
           <p className="font-medium">Счетов нет</p>
         </div>
       ) : (
-        <div className="space-y-2">
-          {visible.map(inv => {
+        <div className={`space-y-2 transition-opacity duration-150 ${fetching ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
+          {invoices.map(inv => {
             const st = STATUS_STYLE[inv.status] ?? STATUS_STYLE['CANCELED']
             const isExpanded = expanded === inv.id
             const isPaying   = paying === inv.id

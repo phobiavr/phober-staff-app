@@ -32,13 +32,11 @@ export interface Invoice {
   created_at: string | null
 }
 
-export const getInvoices = () =>
-  client.get<Invoice[]>('/staff/invoices').then(res => res.data)
+export const getInvoices = (params?: { status?: string; period?: string }) =>
+  client.get<Invoice[]>('/staff/invoices', { params }).then(res => res.data)
 
 export const getOpenInvoices = () =>
-  client.get<Invoice[]>('/staff/invoices').then(res =>
-    res.data.filter(i => i.status === 'QUEUE')
-  )
+  getInvoices({ status: 'QUEUE', period: 'TODAY' })
 
 // method: { CARD: 500, CASH: 300 } — суммы должны равняться invoice.total
 export const payInvoice = (id: number, method: Record<string, number>) =>
