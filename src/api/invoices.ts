@@ -27,7 +27,7 @@ export interface Invoice {
   status: string
   sessions: InvoiceSession[]
   snack_sales: InvoiceSnackSale[]
-  payment_method: string[] | null
+  payment_method: Record<string, number> | null
   total: number
   created_at: string | null
 }

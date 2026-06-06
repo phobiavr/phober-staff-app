@@ -9,6 +9,12 @@ const STATUS_LABELS: Record<string, string> = {
   CANCELED: 'Отменён',
 }
 
+const PAYMENT_LABELS: Record<string, string> = {
+  CASH:  'Наличные',
+  CARD:  'Карта',
+  BONUS: 'Бонус',
+}
+
 const SESSION_STATUS: Record<string, string> = {
   ACTIVE:   'Активен',
   FINISHED: 'Завершён',
@@ -90,10 +96,10 @@ export function printInvoice(invoice: Invoice) {
       <span>Дата</span>
       ${fmtDate(invoice.sessions[0].created_at)}
     </div>` : ''}
-    ${invoice.payment_method?.length ? `
+    ${invoice.payment_method && Object.keys(invoice.payment_method).length ? `
     <div class="meta-item">
       <span>Способ оплаты</span>
-      ${invoice.payment_method.join(', ')}
+      ${Object.entries(invoice.payment_method).map(([k, v]) => `${PAYMENT_LABELS[k] ?? k}: ${v} AZN`).join('<br/>')}
     </div>` : ''}
   </div>
 

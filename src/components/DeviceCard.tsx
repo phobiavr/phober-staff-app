@@ -173,12 +173,20 @@ export default function DeviceCard({ instance, session, fetchedAt, logo, onStart
             </button>
           </div>
         ) : isActive && session ? (
-          <button
-            onClick={() => onFinish(session)}
-            className="w-full py-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-semibold hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors border border-red-100 dark:border-red-900/30"
-          >
-            Завершить
-          </button>
+          <div className="flex gap-1.5">
+            <button
+              onClick={() => onCancelSession(session)}
+              className="flex-1 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            >
+              Отмена
+            </button>
+            <button
+              onClick={() => onFinish(session)}
+              className="flex-1 py-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-semibold hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors border border-red-100 dark:border-red-900/30"
+            >
+              Завершить
+            </button>
+          </div>
         ) : isFree ? (
           <button
             onClick={() => onStart(instance)}
