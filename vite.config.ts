@@ -13,7 +13,8 @@ export default defineConfig({
       usePolling: true,
     },
     hmr: {
-      clientPort: 80,
+      protocol: 'wss',
+      clientPort: 443,
     },
   },
 })
