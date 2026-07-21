@@ -24,7 +24,7 @@ interface Props {
   employeesLoading: boolean
   invoices: Invoice[]
   tariffPlans: TariffPlan[]
-  onConfirm: (params: Omit<CreateSessionParams, 'instance_id'>) => void
+  onConfirm: (params: Omit<CreateSessionParams, 'instance_id'>) => Promise<void>
   onClose: () => void
 }
 
@@ -32,6 +32,7 @@ const selectCls = 'w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:bor
 
 export default function StartSessionModal({ instance, employees, employeesLoading, invoices, tariffPlans, onConfirm, onClose }: Props) {
   const [time, setTime] = useState<SessionTime>('MIN_15')
+  const [saving, setSaving] = useState(false)
 
   const [selectedEmployee, setSelectedEmployee] = useState<string>(
     () => employees.length > 0 ? String(employees[0].id) : ''
@@ -87,15 +88,22 @@ export default function StartSessionModal({ instance, employees, employeesLoadin
     setCustomerSearch('')
   }
 
-  const handleConfirm = () => {
-    if (!selectedEmployee) return
+  const handleConfirm = async () => {
+    if (!selectedEmployee || saving) return
     const invoiceId = selectedInvoice ? Number(selectedInvoice) : undefined
-    onConfirm({
-      time,
-      serviced_by: Number(selectedEmployee),
-      ...(invoiceId ? { invoice_id: invoiceId } : {}),
-      ...(!invoiceId && selectedCustomer ? { customer_id: selectedCustomer.id } : {}),
-    })
+    setSaving(true)
+    try {
+      // onConfirm resolves whether the request succeeded or failed; on failure
+      // the modal stays open (onClose is only called by the parent on success).
+      await onConfirm({
+        time,
+        serviced_by: Number(selectedEmployee),
+        ...(invoiceId ? { invoice_id: invoiceId } : {}),
+        ...(!invoiceId && selectedCustomer ? { customer_id: selectedCustomer.id } : {}),
+      })
+    } finally {
+      setSaving(false)
+    }
   }
 
   const chosenInvoice = invoices.find(i => String(i.id) === selectedInvoice)
@@ -276,10 +284,10 @@ export default function StartSessionModal({ instance, employees, employeesLoadin
             </button>
             <button
               onClick={handleConfirm}
-              disabled={!selectedEmployee}
+              disabled={!selectedEmployee || saving}
               className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
-              Запустить
+              {saving ? 'Запуск...' : 'Запустить'}
             </button>
           </div>
 

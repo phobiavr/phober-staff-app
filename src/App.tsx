@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { ThemeProvider } from './contexts/ThemeContext'
+import { ToastProvider } from './contexts/ToastContext'
 import { TvPinProvider } from './contexts/TvPinContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout'
@@ -17,6 +18,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <ThemeProvider>
+      <ToastProvider>
       <TvPinProvider>
       <AuthProvider>
         <Routes>
@@ -34,6 +36,7 @@ export default function App() {
         </Routes>
       </AuthProvider>
       </TvPinProvider>
+      </ToastProvider>
       </ThemeProvider>
     </BrowserRouter>
   )

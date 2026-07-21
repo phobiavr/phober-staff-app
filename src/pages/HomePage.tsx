@@ -101,15 +101,17 @@ export default function HomePage() {
   const handleStartConfirm = async (params: Omit<CreateSessionParams, 'instance_id'>) => {
     if (!selectedInstance) return
     const inst = selectedInstance
-    setSelectedInstance(null)
     try {
       const { data: session } = await createSession({ ...params, instance_id: inst.id })
       setSessions(prev => ({ ...prev, [inst.id]: session }))
       setFetchedAt(Date.now())
+      setSelectedInstance(null)
       refresh()
       refreshEmployees()
       refreshInvoices()
-    } catch {}
+    } catch {
+      // модалка остаётся открытой — тост об ошибке уже показан axios-интерцептором
+    }
   }
 
   const handleStartSession = async (session: Session) => {
