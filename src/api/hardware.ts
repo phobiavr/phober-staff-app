@@ -4,6 +4,8 @@ import { API_BASE_URL } from '../config'
 export interface Schedule {
   type: string      // IN_SESSION | MAINTENANCE | RESERVATION | INSPECTION | REPAIR | ON_EVENT | CANCELED | N/A
   countdown: number // seconds remaining, -1 = no end date, 0 = no schedule
+  start: string | null
+  end: string | null
 }
 
 export interface UpcomingSchedule {
@@ -15,7 +17,9 @@ export interface Instance {
   id: number
   label: string
   device: string
+  mac_address: string | null
   active: boolean
+  created_at: string
   schedule: Schedule | null
   upcoming_schedule: UpcomingSchedule | null
 }
@@ -28,7 +32,7 @@ export interface Device {
   logo: string
 }
 
-const DEFAULT_SCHEDULE: Schedule = { type: 'N/A', countdown: 0 }
+const DEFAULT_SCHEDULE: Schedule = { type: 'N/A', countdown: 0, start: null, end: null }
 
 export const normalizeInstance = (i: Instance): Instance => ({
   ...i,

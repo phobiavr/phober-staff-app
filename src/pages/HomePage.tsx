@@ -8,6 +8,7 @@ import { TariffPlan, getTariffPlans } from '../api/tariffs'
 import DeviceCard from '../components/DeviceCard'
 import EmployeePanel from '../components/EmployeePanel'
 import StartSessionModal from '../components/StartSessionModal'
+import InstanceInfoModal from '../components/InstanceInfoModal'
 import { echo } from '../realtime/echo'
 import { useTvPin } from '../contexts/TvPinContext'
 
@@ -29,6 +30,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true)
   const [employeesLoading, setEmployeesLoading] = useState(true)
   const [selectedInstance, setSelectedInstance] = useState<Instance | null>(null)
+  const [infoInstanceId, setInfoInstanceId] = useState<number | null>(null)
 
   useEffect(() => {
     const ts = Date.now()
@@ -237,6 +239,7 @@ export default function HomePage() {
                 onCancelSession={handleCancelSession}
                 onFinish={handleFinish}
                 onExpire={handleExpire}
+                onInfo={inst => setInfoInstanceId(inst.id)}
               />
             ))}
           </div>
@@ -273,6 +276,18 @@ export default function HomePage() {
           onClose={() => setSelectedInstance(null)}
         />
       )}
+
+      {infoInstanceId !== null && (() => {
+        const inst = instances.find(i => i.id === infoInstanceId)
+        return inst ? (
+          <InstanceInfoModal
+            instance={inst}
+            session={sessions[inst.id] ?? null}
+            logo={logoMap[inst.device]}
+            onClose={() => setInfoInstanceId(null)}
+          />
+        ) : null
+      })()}
     </div>
   )
 }
