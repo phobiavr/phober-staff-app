@@ -1,15 +1,30 @@
-import { createContext, useContext, useState, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { getMe, Me } from '../api/auth'
 
 interface AuthContextValue {
   token: string | null
+  me: Me | null
   login: (token: string) => void
   logout: () => void
+  hasPermission: (permission: string) => boolean
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'))
+  const [me, setMe] = useState<Me | null>(null)
+
+  useEffect(() => {
+    if (!token) {
+      setMe(null)
+      return
+    }
+
+    getMe()
+      .then(({ data }) => setMe(data))
+      .catch(() => setMe(null))
+  }, [token])
 
   const login = (newToken: string) => {
     localStorage.setItem('token', newToken)
@@ -21,8 +36,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null)
   }
 
+  const hasPermission = (permission: string) => me?.permissions.includes(permission) ?? false
+
   return (
-    <AuthContext.Provider value={{ token, login, logout }}>
+    <AuthContext.Provider value={{ token, me, login, logout, hasPermission }}>
       {children}
     </AuthContext.Provider>
   )

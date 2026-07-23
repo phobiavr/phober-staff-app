@@ -3,6 +3,7 @@ import { Invoice, getInvoices, payInvoice, cancelInvoice } from '../api/invoices
 import { setSessionDiscount } from '../api/sessions'
 import { printInvoice } from '../utils/printInvoice'
 import { searchCustomers, Customer, LOYALTY_DISCOUNT, LOYALTY_LABEL, LOYALTY_COLOR } from '../api/crm'
+import { useAuth } from '../contexts/AuthContext'
 
 type StatusFilter = 'ALL' | 'QUEUE' | 'PAYED' | 'CANCELED'
 type PeriodFilter = 'TODAY' | 'WEEK' | 'MONTH'
@@ -282,6 +283,8 @@ function PaymentForm({ total, onConfirm, onCancel }: PaymentFormProps) {
 
 // ---------- InvoicesPage ----------
 export default function InvoicesPage() {
+  const { hasPermission } = useAuth()
+  const canManageDiscount = hasPermission('manage_discount')
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
   const [fetching, setFetching] = useState(false)
@@ -462,7 +465,7 @@ export default function InvoicesPage() {
                         <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">Сеансы</p>
                         <div className="space-y-1.5">
                           {inv.sessions.map(s => {
-                            const canDiscount = inv.status === 'QUEUE' && (s.status === 'ACTIVE' || s.status === 'FINISHED')
+                            const canDiscount = canManageDiscount && inv.status === 'QUEUE' && (s.status === 'ACTIVE' || s.status === 'FINISHED')
                             const busy = applyingDiscount === s.id
                             return (
                               <div key={s.id} className="bg-gray-50 dark:bg-gray-800 rounded-xl px-3 py-2 space-y-2">
@@ -538,7 +541,7 @@ export default function InvoicesPage() {
                     )}
 
                     {/* Карта лояльности */}
-                    {inv.status === 'QUEUE' && (
+                    {canManageDiscount && inv.status === 'QUEUE' && (
                       <LoyaltySection
                         sessions={inv.sessions}
                         onApply={handleDiscount}
