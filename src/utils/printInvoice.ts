@@ -30,7 +30,7 @@ export function printInvoice(invoice: Invoice) {
       <td>${SESSION_STATUS[s.status] ?? s.status}</td>
       <td>${s.serviced_by_name ?? '—'}</td>
       <td class="num">${s.price} AZN</td>
-      <td class="num">${s.discount ? `-${s.discount * 10}%` : '—'}</td>
+      <td class="num">${s.discount ? `-${s.discount}%` : '—'}</td>
       <td class="num bold">${s.end_price} AZN</td>
     </tr>
   `).join('')

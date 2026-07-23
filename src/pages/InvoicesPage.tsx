@@ -335,7 +335,7 @@ export default function InvoicesPage() {
         if (!hasSession) return inv
         const sessions = inv.sessions.map(s => {
           if (s.id !== sessionId) return s
-          const end_price = parseFloat((s.price * (1 - discount * 0.1)).toFixed(2))
+          const end_price = parseFloat((s.price * (1 - discount / 100)).toFixed(2))
           return { ...s, discount, end_price }
         })
         const total = parseFloat(
@@ -481,7 +481,7 @@ export default function InvoicesPage() {
                                     )}
                                     <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{s.end_price} AZN</span>
                                     {s.discount > 0 && (
-                                      <span className="ml-1.5 text-xs font-semibold text-orange-500 dark:text-orange-400">−{s.discount * 10}%</span>
+                                      <span className="ml-1.5 text-xs font-semibold text-orange-500 dark:text-orange-400">−{s.discount}%</span>
                                     )}
                                   </div>
                                 </div>
@@ -489,13 +489,12 @@ export default function InvoicesPage() {
                                   <div className="flex items-center gap-1.5 flex-wrap">
                                     <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">Скидка:</span>
                                     {[10, 20, 30, 50, 100].map(pct => {
-                                      const val = pct / 10
-                                      const active = s.discount === val
+                                      const active = s.discount === pct
                                       return (
                                         <button
                                           key={pct}
                                           disabled={busy}
-                                          onClick={() => handleDiscount(s.id, active ? 0 : val)}
+                                          onClick={() => handleDiscount(s.id, active ? 0 : pct)}
                                           className={`px-2 py-0.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-40 ${
                                             active
                                               ? 'bg-orange-500 text-white'

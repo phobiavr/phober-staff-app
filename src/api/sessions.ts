@@ -40,6 +40,5 @@ export const cancelSession = (id: number) =>
 export const finishSession = (id: number) =>
   client.put<void>(`/staff/sessions/${id}/finish`, {})
 
-// discount: 1=10%, 2=20%, 3=30%, 4=40%, 5=50%
 export const setSessionDiscount = (id: number, discount: number) =>
-  client.get<void>(`/staff/sessions/${id}/discount/${discount}`)
+  client.put<void>(`/staff/sessions/${id}/discount`, { discount })

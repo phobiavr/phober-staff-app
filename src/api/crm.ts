@@ -12,11 +12,12 @@ export interface LoyaltyCard {
   status: LoyaltyStatus
 }
 
+// percent discount applied for each loyalty tier
 export const LOYALTY_DISCOUNT: Record<LoyaltyStatus, number> = {
-  BASIC:    1,
-  SILVER:   2,
-  GOLD:     3,
-  PLATINUM: 5,
+  BASIC:    10,
+  SILVER:   20,
+  GOLD:     30,
+  PLATINUM: 50,
 }
 
 export const LOYALTY_LABEL: Record<LoyaltyStatus, string> = {
