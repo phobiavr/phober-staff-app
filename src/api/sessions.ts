@@ -28,8 +28,8 @@ export const getSessions = () =>
 export const getTodaySessions = () =>
   client.get<Session[]>('/staff/sessions/today')
 
-export const createSession = (params: CreateSessionParams) =>
-  client.post<Session>('/staff/sessions', params)
+export const createSession = (params: CreateSessionParams, idempotencyKey: string) =>
+  client.post<Session>('/staff/sessions', params, { headers: { 'Idempotency-Key': idempotencyKey } })
 
 export const startSession = (id: number) =>
   client.put<Session>(`/staff/sessions/${id}/start`, {})

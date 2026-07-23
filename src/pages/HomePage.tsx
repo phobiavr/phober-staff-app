@@ -100,11 +100,11 @@ export default function HomePage() {
     setInvoices(invs)
   }
 
-  const handleStartConfirm = async (params: Omit<CreateSessionParams, 'instance_id'>) => {
+  const handleStartConfirm = async (params: Omit<CreateSessionParams, 'instance_id'>, idempotencyKey: string) => {
     if (!selectedInstance) return
     const inst = selectedInstance
     try {
-      const { data: session } = await createSession({ ...params, instance_id: inst.id })
+      const { data: session } = await createSession({ ...params, instance_id: inst.id }, idempotencyKey)
       setSessions(prev => ({ ...prev, [inst.id]: session }))
       setFetchedAt(Date.now())
       setSelectedInstance(null)

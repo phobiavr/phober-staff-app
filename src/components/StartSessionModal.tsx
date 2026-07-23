@@ -24,7 +24,7 @@ interface Props {
   employeesLoading: boolean
   invoices: Invoice[]
   tariffPlans: TariffPlan[]
-  onConfirm: (params: Omit<CreateSessionParams, 'instance_id'>) => Promise<void>
+  onConfirm: (params: Omit<CreateSessionParams, 'instance_id'>, idempotencyKey: string) => Promise<void>
   onClose: () => void
 }
 
@@ -50,6 +50,8 @@ export default function StartSessionModal({ instance, employees, employeesLoadin
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const dropdownRef  = useRef<HTMLDivElement>(null)
+
+  const idempotencyKeyRef = useRef<string>(crypto.randomUUID())
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -100,7 +102,7 @@ export default function StartSessionModal({ instance, employees, employeesLoadin
         serviced_by: Number(selectedEmployee),
         ...(invoiceId ? { invoice_id: invoiceId } : {}),
         ...(!invoiceId && selectedCustomer ? { customer_id: selectedCustomer.id } : {}),
-      })
+      }, idempotencyKeyRef.current)
     } finally {
       setSaving(false)
     }
